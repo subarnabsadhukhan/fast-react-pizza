@@ -2,55 +2,47 @@ import { Link } from "react-router-dom";
 import LinkButton from "../../ui/LinkButton";
 import Button from "../../ui/Button";
 import CartItem from "./CartItem";
-import { useSelector } from "react-redux";
-
-const fakeCart = [
-  {
-    pizzaId: 12,
-    name: "Mediterranean",
-    quantity: 2,
-    unitPrice: 16,
-    totalPrice: 32,
-  },
-  {
-    pizzaId: 6,
-    name: "Vegetale",
-    quantity: 1,
-    unitPrice: 13,
-    totalPrice: 13,
-  },
-  {
-    pizzaId: 11,
-    name: "Spinach and Mushroom",
-    quantity: 1,
-    unitPrice: 15,
-    totalPrice: 15,
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
+import { clearCart, getCart } from "./CartSlice";
 
 function Cart() {
-  const cart = fakeCart;
+  const dispatch = useDispatch();
+  const cart = useSelector(getCart);
   const username = useSelector((state) => state.user.userName);
+
+  function handleClearCart() {
+    dispatch(clearCart());
+  }
 
   return (
     <div className="px-4 py-3">
       <LinkButton to="/menu">&larr; Back to menu</LinkButton>
 
-      <h2 className="mt-7 text-2xl font-semibold">Your cart, {username}</h2>
+      {cart.length !== 0 ? (
+        <>
+          <h2 className="mt-7 text-2xl font-semibold">Your cart, {username}</h2>
 
-      <ul className=" mt-3 divide-y divide-stone-200 border-b">
-        {cart.map((item) => (
-          <CartItem key={item.pizzaId} item={item} />
-        ))}
-      </ul>
+          <ul className=" mt-3 divide-y divide-stone-200 border-b">
+            {cart.map((item) => (
+              <CartItem key={item.pizzaId} item={item} />
+            ))}
+          </ul>
 
-      <div className=" mt-6 space-x-2">
-        <Button type="primary" to="/order/new">
-          Order pizzas
-        </Button>
-        <Link></Link>
-        <Button type="secondary">Clear cart</Button>
-      </div>
+          <div className=" mt-6 space-x-2">
+            <Button type="primary" to="/order/new">
+              Order pizzas
+            </Button>
+            <Link></Link>
+            <Button onClick={handleClearCart} type="secondary">
+              Clear cart
+            </Button>
+          </div>
+        </>
+      ) : (
+        <h2 className="mt-7 text-lg font-semibold">
+          Your cart is still empty. Start adding some pizzas :)
+        </h2>
+      )}
     </div>
   );
 }
