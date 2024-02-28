@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Form, redirect, useActionData, useNavigation } from "react-router-dom";
 import { createOrder } from "../../services/apiRestaurant";
 import Button from "../../ui/Button";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { clearCart, getCart, getTotalCartPrice } from "../cart/CartSlice";
 import EmptyCart from "../cart/EmptyCart";
 import store from "../../store";
 import { formatCurrency } from "../../utils/helpers";
+import LinkButton from "../../ui/LinkButton";
+import { fetchAddress } from "../user/userSlice";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -15,14 +17,28 @@ const isValidPhone = (str) =>
   );
 
 function CreateOrder() {
+  const dispatch = useDispatch();
   const [withPriority, setWithPriority] = useState(false);
-  const username = useSelector((state) => state.user.userName);
+  const {
+    username,
+    position,
+    address,
+    error: addressError,
+    status: addressStatus,
+  } = useSelector((state) => state.user);
   const totalCartPrice = useSelector(getTotalCartPrice);
   const priorityPrice = withPriority ? totalCartPrice * 0.2 : 0;
   const orderPrice = totalCartPrice + priorityPrice;
   const cart = useSelector(getCart);
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const isLoadingAddress = addressStatus === "loading";
+
+  const handleGetPosition = (e) => {
+    e.preventDefault();
+
+    dispatch(fetchAddress());
+  };
 
   const formErrors = useActionData();
   if (cart.length === 0) return <EmptyCart />;
@@ -55,10 +71,34 @@ function CreateOrder() {
             </p>
           )}
         </div>
-
-        <div className=" mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className=" sm:basis-40">Address</label>
-          <input type="text" name="address" className="input" required />
+        <div className="  mb-5 flex flex-col gap-1">
+          <div className=" relative flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className=" sm:basis-40">Address</label>
+            <input
+              type="text"
+              defaultValue={address}
+              name="address"
+              disabled={isLoadingAddress}
+              className="input"
+              required
+            />
+            {(!position?.longitude || !position?.latitude) && (
+              <span className="absolute bottom-0 right-0 z-50">
+                <Button
+                  disabled={isLoadingAddress}
+                  type="primary"
+                  onClick={handleGetPosition}
+                >
+                  Get Positon
+                </Button>
+              </span>
+            )}
+          </div>
+          {addressStatus === "error" && (
+            <p className="text-end text-sm text-red-500">
+              ⚠️{addressError}. Make sure to fill this field!
+            </p>
+          )}
         </div>
 
         <div className="mb-8 flex items-center gap-4">
@@ -75,9 +115,18 @@ function CreateOrder() {
           </label>
         </div>
         <input type="hidden" name="cart" value={JSON.stringify(cart)} />
+        <input
+          type="hidden"
+          name="position"
+          value={
+            position?.latitude && position?.longitude
+              ? `${position.latitude},${position.longitude}`
+              : ``
+          }
+        />
 
         <div>
-          <Button type="primary" disabled={isSubmitting}>
+          <Button type="primary" disabled={isSubmitting || isLoadingAddress}>
             {isSubmitting
               ? "Placing Order..."
               : "Order now for " + formatCurrency(orderPrice)}
@@ -103,6 +152,7 @@ export async function action({ request }) {
   if (!isValidPhone(order.phone))
     errors.phone = "Please enter a valid phone number";
   if (Object.keys(errors).length > 0) return errors;
+  console.log(order);
 
   const newOrder = await createOrder(order);
   // Do Not over use

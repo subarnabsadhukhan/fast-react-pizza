@@ -8,7 +8,7 @@ import { clearCart, getCart } from "./CartSlice";
 function Cart() {
   const dispatch = useDispatch();
   const cart = useSelector(getCart);
-  const username = useSelector((state) => state.user.userName);
+  const username = useSelector((state) => state.user.username);
 
   function handleClearCart() {
     dispatch(clearCart());
