@@ -7,7 +7,6 @@ import { clearCart, getCart, getTotalCartPrice } from "../cart/CartSlice";
 import EmptyCart from "../cart/EmptyCart";
 import store from "../../store";
 import { formatCurrency } from "../../utils/helpers";
-import LinkButton from "../../ui/LinkButton";
 import { fetchAddress } from "../user/userSlice";
 
 // https://uibakery.io/regex-library/phone-number
